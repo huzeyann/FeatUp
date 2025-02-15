@@ -43,7 +43,7 @@ def _load_backbone(pretrained, use_norm, model_name):
         my_model_list = ["sam"]
         if model_name in my_model_list:
             norm = "yes" if use_norm else "no"
-            checkpoint_url = f"https://github.com/huzeyann/FeatUp/blob/main/ckpts/{model_name}_{norm}_norm.ckpt"
+            checkpoint_url = f"https://raw.githubusercontent.com/huzeyann/FeatUp/refs/heads/main/ckpts/{model_name}_{norm}_norm.ckpt"
             state_dict = torch.hub.load_state_dict_from_url(checkpoint_url)
         else:
             checkpoint_url = f"https://marhamilresearch4.blob.core.windows.net/feature-upsampling-public/pretrained/{exp_dir}{model_name}_jbu_stack_cocostuff.ckpt"
