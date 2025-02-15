@@ -16,7 +16,7 @@ except ImportError:
     """
     logging.warning(message)
 
-    def AdaptiveConv(x, kernel):
+    def _adaptive_conv(x, kernel):
         """
         Adaptive convolution where each spatial position has a unique convolution kernel.
 
@@ -41,6 +41,11 @@ except ImportError:
 
         # Permute back to (B, C, H, W)
         return out.permute(0, 3, 1, 2)
+
+    class AdaptiveConv:
+        @staticmethod
+        def apply(x, kernel):
+            return _adaptive_conv(x, kernel)
 
 
 class SimpleImplicitFeaturizer(torch.nn.Module):
