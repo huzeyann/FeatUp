@@ -4,7 +4,43 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from featup.adaptive_conv_cuda.adaptive_conv import AdaptiveConv
+import logging
+
+try:
+    from featup.adaptive_conv_cuda.adaptive_conv import AdaptiveConv
+except ImportError:
+    
+    message = """AdaptiveConv installation failed. Using a slower and less memory-efficient implementation.
+    To install AdaptiveConv, run:
+    pip install git+https://github.com/mhamilton723/FeatUp
+    """
+    logging.warning(message)
+
+    def AdaptiveConv(x, kernel):
+        """
+        Adaptive convolution where each spatial position has a unique convolution kernel.
+
+        Args:
+            x: Tensor of shape (B, C, H+Pad, W+Pad) - Input feature map.
+            kernel: Tensor of shape (B, H, W, KH, KW) - Adaptive convolution kernels.
+
+        Returns:
+            Tensor of shape (B, C, H, W) - Output feature map.
+        """
+        B, C, H_pad, W_pad = x.shape
+        B, H, W, KH, KW = kernel.shape
+
+        # Extract local patches of shape (B, C*KH*KW, H*W)
+        patches = F.unfold(x, kernel_size=(KH, KW)).reshape(B, C, KH, KW, H, W)
+
+        # Reshape patches to (B, H, W, C, KH, KW) for element-wise multiplication
+        patches = patches.permute(0, 4, 5, 1, 2, 3)  # (B, H, W, C, KH, KW)
+
+        # Perform per-pixel convolution: Sum over KH, KW dimensions
+        out = (patches * kernel.unsqueeze(3)).sum(dim=(-1, -2))  # (B, H, W, C)
+
+        # Permute back to (B, C, H, W)
+        return out.permute(0, 3, 1, 2)
 
 
 class SimpleImplicitFeaturizer(torch.nn.Module):
