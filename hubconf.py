@@ -53,25 +53,30 @@ def _load_backbone(pretrained, use_norm, model_name):
     return model
 
 
-def vit(pretrained=True, use_norm=True):
+def vit(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "vit")
 
 
-def dino16(pretrained=True, use_norm=True):
+def dino16(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "dino16")
 
+def dino(pretrained=True, use_norm=False):
+    return _load_backbone(pretrained, use_norm, "dino16")
 
-def clip(pretrained=True, use_norm=True):
+def sam(pretrained=True, use_norm=False):
+    return _load_backbone(pretrained, use_norm, "sam")
+
+def clip(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "clip")
 
 
-def dinov2(pretrained=True, use_norm=True):
+def dinov2(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "dinov2")
 
 
-def resnet50(pretrained=True, use_norm=True):
+def resnet50(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "resnet50")
 
-def maskclip(pretrained=True, use_norm=True):
+def maskclip(pretrained=True, use_norm=False):
     assert not use_norm, "MaskCLIP only supports unnormed model"
     return _load_backbone(pretrained, use_norm, "maskclip")
