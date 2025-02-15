@@ -30,20 +30,18 @@ except ImportError:
         B, C, H_pad, W_pad = x.shape
         B, H, W, KH, KW = kernel.shape
 
-        # Extract local patches of shape (B, C*KH*KW, H*W)
-        patches = F.unfold(x, kernel_size=(KH, KW)).reshape(B, C, KH, KW, H, W)
-
-        # Reshape patches to (B, H, W, C, KH, KW) for element-wise multiplication
-        patches = patches.permute(0, 4, 5, 1, 2, 3)  # (B, H, W, C, KH, KW)
-
         # Perform per-pixel convolution: Sum over KH, KW dimensions using a chunked approach to reduce memory usage
         out = torch.zeros(B, H, W, C, device=x.device)
-        chunk_size = 1024
-        for i in range(KH):
+        chunk_size = 4
+        for i_start in range(0, KH, chunk_size):
             for j_start in range(0, KW, chunk_size):
+                i_end = min(i_start + chunk_size, KH)
                 j_end = min(j_start + chunk_size, KW)
-                out += (patches[:, :, :, :, i, j_start:j_end] * 
-                    kernel[:, :, :, i, j_start:j_end].unsqueeze(3)).sum(dim=4)
+                # Extract local patches of shape (B, C*KH*KW, H*W) for the current chunk
+                patches = F.unfold(x, kernel_size=(i_end - i_start, j_end - j_start), padding=(i_start, j_start)).reshape(B, C, i_end - i_start, j_end - j_start, H, W)
+                # Reshape patches to (B, H, W, C, KH, KW) for element-wise multiplication
+                patches = patches.permute(0, 4, 5, 1, 2, 3)  # (B, H, W, C, KH, KW)
+                out += (patches[:, :, :, :, :, :] * kernel[:, :, :, i_start:i_end, j_start:j_end].unsqueeze(3)).sum(dim=4).sum(dim=4)
 
         # Permute back to (B, C, H, W)
         return out.permute(0, 3, 1, 2)
