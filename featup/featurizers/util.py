@@ -68,6 +68,11 @@ def get_featurizer(name, activation_type="key", **kwargs):
         model = DeepLabV3Featurizer(model)
         patch_size = 1
         dim = 2048
+    elif name == "sam":
+        from .SAM import SAM
+        model = SAM(model_size='vit_b')
+        patch_size = 16
+        dim = 256
     else:
         raise ValueError("unknown model: {}".format(name))
     return model, patch_size, dim
