@@ -36,8 +36,14 @@ except ImportError:
         # Reshape patches to (B, H, W, C, KH, KW) for element-wise multiplication
         patches = patches.permute(0, 4, 5, 1, 2, 3)  # (B, H, W, C, KH, KW)
 
-        # Perform per-pixel convolution: Sum over KH, KW dimensions
-        out = (patches * kernel.unsqueeze(3)).sum(dim=(-1, -2))  # (B, H, W, C)
+        # Perform per-pixel convolution: Sum over KH, KW dimensions using a chunked approach to reduce memory usage
+        out = torch.zeros(B, H, W, C, device=x.device)
+        chunk_size = 1024
+        for i in range(KH):
+            for j_start in range(0, KW, chunk_size):
+                j_end = min(j_start + chunk_size, KW)
+                out += (patches[:, :, :, :, i, j_start:j_end] * 
+                    kernel[:, :, :, i, j_start:j_end].unsqueeze(3)).sum(dim=4)
 
         # Permute back to (B, C, H, W)
         return out.permute(0, 3, 1, 2)
