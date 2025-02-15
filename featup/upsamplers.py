@@ -10,9 +10,18 @@ try:
     from featup.adaptive_conv_cuda.adaptive_conv import AdaptiveConv
 except ImportError:
     
-    message = """AdaptiveConv installation failed. Using a slower and less memory-efficient implementation.
+    message = """
+    ---
+    AdaptiveConv installation Not Found. 
+    Using a slower and less memory-efficient implementation.
+    ---
     To install AdaptiveConv, run:
     pip install git+https://github.com/mhamilton723/FeatUp
+    ---
+    if pip fails, try install cuda-toolkit first:
+    conda install -c nvidia cuda-toolkit
+    ---
+    ---
     """
     logging.warning(message)
 
@@ -30,26 +39,25 @@ except ImportError:
         B, C, H_pad, W_pad = x.shape
         B, H, W, KH, KW = kernel.shape
 
-        # Perform per-pixel convolution: Sum over KH, KW dimensions using a chunked approach to reduce memory usage
-        out = torch.zeros(B, H, W, C, device=x.device)
-        chunk_size = 4
-        for i_start in range(0, KH, chunk_size):
-            for j_start in range(0, KW, chunk_size):
-                i_end = min(i_start + chunk_size, KH)
-                j_end = min(j_start + chunk_size, KW)
-                # Extract local patches of shape (B, C*KH*KW, H*W) for the current chunk
-                patches = F.unfold(x, kernel_size=(i_end - i_start, j_end - j_start), padding=(i_start, j_start)).reshape(B, C, i_end - i_start, j_end - j_start, H, W)
-                # Reshape patches to (B, H, W, C, KH, KW) for element-wise multiplication
-                patches = patches.permute(0, 4, 5, 1, 2, 3)  # (B, H, W, C, KH, KW)
-                out += (patches[:, :, :, :, :, :] * kernel[:, :, :, i_start:i_end, j_start:j_end].unsqueeze(3)).sum(dim=4).sum(dim=4)
+        chunk_size = 32  # 32*1024*1024*7*7*4/1024**3 = 6.125GB (1 image, 1024 resolution)
+        out_chunks = []
 
-        # Permute back to (B, C, H, W)
+        for c_start in range(0, C, chunk_size):
+            c_end = min(c_start + chunk_size, C)
+            x_chunk = x[:, c_start:c_end, :, :]
+            patches = F.unfold(x_chunk, kernel_size=(KH, KW)).reshape(B, c_end - c_start, KH, KW, H, W)
+            patches = patches.permute(0, 4, 5, 1, 2, 3)  # (B, H, W, C_chunk, KH, KW)
+            out_chunk = (patches * kernel.unsqueeze(3)).sum(dim=(-1, -2))  # (B, H, W, C_chunk)
+            out_chunks.append(out_chunk)
+
+        out = torch.cat(out_chunks, dim=3)  # Concatenate along the channel dimension
         return out.permute(0, 3, 1, 2)
 
     class AdaptiveConv:
         @staticmethod
         def apply(x, kernel):
             return _adaptive_conv(x, kernel)
+
 
 
 class SimpleImplicitFeaturizer(torch.nn.Module):
