@@ -16,14 +16,18 @@ except ImportError:
     Using a slower and less memory-efficient implementation.
     ---
     To install AdaptiveConv, run:
-    pip install git+https://github.com/mhamilton723/FeatUp
-    ---
-    if pip fails, try install cuda-toolkit first:
-    conda install -c nvidia cuda-toolkit
+    
+    
+    >>> pip install git+https://github.com/mhamilton723/FeatUp
+    
+    
+    if the above pip fails, try install cuda-toolkit first:
+    >>> conda install -c nvidia cuda-toolkit
     ---
     ---
     """
-    logging.warning(message)
+    logger = logging.getLogger("FeatUp")
+    logger.warning(message)
 
     def _adaptive_conv(x, kernel):
         """
