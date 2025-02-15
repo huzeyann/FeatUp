@@ -23,6 +23,22 @@ class UpsampledBackbone(Module):
         return self.upsampler(self.model(image), image)
 
 
+def _download_to_torch_cache(url):
+    import os
+    import requests
+    from tqdm import tqdm
+
+    torch_cache_home = torch.hub.get_dir()
+    os.makedirs(torch_cache_home, exist_ok=True)
+    filename = os.path.join(torch_cache_home, url.split('/')[-1])
+    if not os.path.exists(filename):
+        response = requests.get(url, stream=True)
+        with open(filename, "wb") as handle:
+            for data in tqdm(response.iter_content()):
+                handle.write(data)
+    return filename
+
+
 def _load_backbone(pretrained, use_norm, model_name):
     """
     The function that will be called by Torch Hub users to instantiate your model.
@@ -44,7 +60,8 @@ def _load_backbone(pretrained, use_norm, model_name):
         if model_name in my_model_list:
             norm = "yes" if use_norm else "no"
             checkpoint_url = f"https://raw.githubusercontent.com/huzeyann/FeatUp/refs/heads/main/ckpts/{model_name}_{norm}_norm.ckpt"
-            state_dict = torch.hub.load_state_dict_from_url(checkpoint_url)
+            filename = _download_to_torch_cache(checkpoint_url)
+            state_dict = torch.load(filename)
         else:
             checkpoint_url = f"https://marhamilresearch4.blob.core.windows.net/feature-upsampling-public/pretrained/{exp_dir}{model_name}_jbu_stack_cocostuff.ckpt"
             state_dict = torch.hub.load_state_dict_from_url(checkpoint_url)["state_dict"]
