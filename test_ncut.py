@@ -46,7 +46,40 @@ def my_highreso_feature(upsampler, images):
     featup = torch.cat(featups, dim=0)
     return featup
     
-upsampler = torch.hub.load("huzeyann/FeatUp", 'dino_vitb16', use_norm=False, force_reload=True)
+upsampler = torch.hub.load("huzeyann/FeatUp", 'dino_vitb16', use_norm=True, force_reload=True)
+# %%
+def load_state_dict(ckpt_path):
+    state_dict = torch.load(ckpt_path)['state_dict']
+    state_dict = {k: v for k, v in state_dict.items() if "scale_net" not in k and "downsampler" not in k}
+    return state_dict
+
+def average_state_dict(ckpt_paths):
+    state_dicts = [load_state_dict(ckpt_path) for ckpt_path in ckpt_paths]
+    avg_state_dict = {}
+    for key in state_dicts[0].keys():
+        avg_state_dict[key] = torch.stack([state_dict[key] for state_dict in state_dicts]).mean(0)
+    return avg_state_dict
+
+ckpt_paths = [
+    # "/data/featup/checkpoints/jbu/dino_vitb16_jbu_stack_cocostuff_attention_norm_False_448_epoch_{}.ckpt".format(i) for i in range(18400, 19400, 100)
+
+    # "/data/featup/checkpoints/jbu/dino_vitb16_jbu_stack_cocostuff_attention_norm_False_448_epoch_19400.ckpt",
+    # "/data/featup/checkpoints/jbu/dino_vitb16_jbu_stack_cocostuff_attention_norm_False_448_epoch_19100.ckpt",
+    # "/data/featup/checkpoints/jbu/dino_vitb16_jbu_stack_cocostuff_attention_norm_False_448_epoch_18400.ckpt",
+
+    "/data/featup/checkpoints/jbu/dino_vitb16_jbu_stack_cocostuff_attention_norm_True_448_epoch_11400.ckpt",
+    "/data/featup/checkpoints/jbu/dino_vitb16_jbu_stack_cocostuff_attention_norm_True_448_epoch_12100.ckpt",
+    "/data/featup/checkpoints/jbu/dino_vitb16_jbu_stack_cocostuff_attention_norm_True_448_epoch_12400.ckpt",
+]
+# ckpt_path = "/data/featup/checkpoints/jbu/dino_vitb16_jbu_stack_cocostuff_attention_norm_False_448_epoch_19100.ckpt"
+state_dict = average_state_dict(ckpt_paths)
+# %%
+# # move the state_dict to cpu
+state_dict = {k: v.cpu() for k, v in state_dict.items()}
+torch.save(state_dict, "/data/featup/github/FeatUp/ckpts/dino_vitb16_yes_norm.ckpt")
+# %%
+upsampler.load_state_dict(state_dict, strict=False)
+
 featup1 = my_highreso_feature(upsampler, images)
 
 ## uncomment this to use DINO+SAM features
@@ -85,6 +118,7 @@ def rgb_from_ncut_discrete_hirarchical(feats, color_num_eig=50, num_clusters=[10
                             # affinity_focal_gamma=gamma, distance=distance,
                             # num_sample=10000, num_sample2=1024,
                             knn=10,
+                            degree=0.05,
                             ).fit_transform(feats)
     # return None, None
     
@@ -148,7 +182,7 @@ def draw_component_boundaries(image):
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Draw black boundary only if the component is large enough
-        min_size = 50
+        min_size = 500
         for contour in contours:
             area = cv2.contourArea(contour)
             if area >= min_size:
@@ -177,7 +211,7 @@ for i in range(3):
     for j, num_cluster in enumerate(num_clusters):
         axes[i][j+1].imshow(ncut_discrete_rgbs[j][i])
         axes[i][j+1].set_title(f'k-way ({num_cluster})')
-plt.suptitle('DiNO Features (sample=10000,1024,p**2+1/D+gamma, knn=100)', fontsize=16)
+plt.suptitle('dino_vitb16 epoch 18400, 19100, 19400, degree=0.05', fontsize=16)
 plt.tight_layout()
 plt.show()
     

@@ -73,8 +73,6 @@ def _load_backbone(pretrained, use_norm, model_name):
 def vit(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "vit")
 
-#TODO: change default to dino_vitb16
-
 def dino_vitb16(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "dino_vitb16")
 
@@ -82,10 +80,10 @@ def dino_vits16(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "dino16")
 
 def dino16(pretrained=True, use_norm=False):
-    return _load_backbone(pretrained, use_norm, "dino16")
+    return _load_backbone(pretrained, use_norm, "dino_vitb16")
 
 def dino(pretrained=True, use_norm=False):
-    return _load_backbone(pretrained, use_norm, "dino16")
+    return _load_backbone(pretrained, use_norm, "dino_vitb16")
 
 def sam(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "sam")
