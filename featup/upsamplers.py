@@ -20,15 +20,20 @@ except ImportError:
     
     >>> pip install git+https://github.com/mhamilton723/FeatUp
     
-    
-    if the above pip fails, try install cuda-toolkit first:
+    if the above pip install fails, try install cuda-toolkit first:
     >>> conda install -c nvidia cuda-toolkit
+
+    after installing, please force reload:
+
+    >>> upsampler = torch.hub.load("huzeyann/FeatUp", 'dino', force_reload=True)
+
     ---
     ---
     """
     logger = logging.getLogger("FeatUp")
     logger.warning(message)
 
+    @torch.no_grad()
     def _adaptive_conv(x, kernel):
         """
         Adaptive convolution where each spatial position has a unique convolution kernel.
@@ -43,7 +48,8 @@ except ImportError:
         B, C, H_pad, W_pad = x.shape
         B, H, W, KH, KW = kernel.shape
 
-        chunk_size = 32  # 32*1024*1024*7*7*4/1024**3 = 6.125GB (1 image, 1024 resolution)
+        # chunk_size = 32  # 32*1024*1024*7*7*4/1024**3 = 6.125GB (1 image, 1024 resolution)
+        chunk_size = 8  # 8*1024*1024*7*7*4/1024**3 = 1.5GB (1 image, 1024 resolution)
         out_chunks = []
 
         for c_start in range(0, C, chunk_size):

@@ -12,6 +12,12 @@ def get_featurizer(name, activation_type="key", **kwargs):
         patch_size = 16
         model = MIDASFeaturizer(output_root=kwargs["output_root"])
         dim = 768
+    elif name == "dino_vitb16":
+        from .huzeDINO import DiNOBackbone
+        patch_size = 16
+        assert activation_type == "token"
+        model = DiNOBackbone(name)
+        dim = 768
     elif name == "dino16":
         from .DINO import DINOFeaturizer
         patch_size = 16

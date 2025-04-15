@@ -73,6 +73,10 @@ def _load_backbone(pretrained, use_norm, model_name):
 def vit(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "vit")
 
+#TODO: add dino_vitb16
+
+def dino_vits16(pretrained=True, use_norm=False):
+    return _load_backbone(pretrained, use_norm, "dino16")
 
 def dino16(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "dino16")
