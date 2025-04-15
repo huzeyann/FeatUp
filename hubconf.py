@@ -56,7 +56,7 @@ def _load_backbone(pretrained, use_norm, model_name):
         else:
             exp_dir = "no_norm/"
 
-        my_model_list = ["sam"]
+        my_model_list = ["sam", "dino_vitb16"]
         if model_name in my_model_list:
             norm = "yes" if use_norm else "no"
             checkpoint_url = f"https://raw.githubusercontent.com/huzeyann/FeatUp/refs/heads/main/ckpts/{model_name}_{norm}_norm.ckpt"
@@ -73,7 +73,10 @@ def _load_backbone(pretrained, use_norm, model_name):
 def vit(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "vit")
 
-#TODO: add dino_vitb16
+#TODO: change default to dino_vitb16
+
+def dino_vitb16(pretrained=True, use_norm=False):
+    return _load_backbone(pretrained, use_norm, "dino_vitb16")
 
 def dino_vits16(pretrained=True, use_norm=False):
     return _load_backbone(pretrained, use_norm, "dino16")
